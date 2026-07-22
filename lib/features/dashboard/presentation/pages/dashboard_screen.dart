@@ -1,9 +1,11 @@
+import 'package:fcjanja/features/auth/cubit/cubit/auth_cubit.dart';
+import 'package:fcjanja/features/auth/presentation/pages/login_page.dart';
+import 'package:fcjanja/features/matches/presentation/pages/create_match_page.dart';
+import 'package:fcjanja/features/matches/presentation/pages/manager_matches_page.dart';
+import 'package:fcjanja/features/players/presentation/pages/create_player_page.dart';
+import 'package:fcjanja/features/response/presentation/player_matches_page.dart';
 import 'package:flutter/material.dart';
-
-import '../../../matches/presentation/pages/create_match_screen.dart';
-import '../../../matches/presentation/pages/manager_matches_screen.dart';
-import '../../../players/presentation/pages/create_player_screen.dart';
-import '../../../response/presentation/player_matches_screen.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 class DashboardScreen extends StatelessWidget {
   final bool isAdmin;
@@ -33,9 +35,7 @@ class DashboardScreen extends StatelessWidget {
                 onPressed: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(
-                      builder: (_) => const CreatePlayerScreen(),
-                    ),
+                    MaterialPageRoute(builder: (_) => const CreatePlayerPage()),
                   );
                 },
                 child: const Text("Create Player"),
@@ -50,9 +50,7 @@ class DashboardScreen extends StatelessWidget {
                 onPressed: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(
-                      builder: (_) => const CreateMatchScreen(),
-                    ),
+                    MaterialPageRoute(builder: (_) => const CreateMatchPage()),
                   );
                 },
                 child: const Text("Create Match"),
@@ -68,7 +66,7 @@ class DashboardScreen extends StatelessWidget {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (_) => const ManagerMatchesScreen(),
+                      builder: (_) => const ManagerMatchesPage(),
                     ),
                   );
                 },
@@ -83,7 +81,7 @@ class DashboardScreen extends StatelessWidget {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (_) => const PlayerMatchesScreen(),
+                      builder: (_) => const PlayerMatchesPage(),
                     ),
                   );
                 },
@@ -97,11 +95,35 @@ class DashboardScreen extends StatelessWidget {
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
-              onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text("Logout will be implemented later."),
+              onPressed: () async {
+                final confirm = await showDialog<bool>(
+                  context: context,
+                  builder: (_) => AlertDialog(
+                    title: const Text("Logout"),
+                    content: const Text("Are you sure you want to logout?"),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context, false),
+                        child: const Text("Cancel"),
+                      ),
+                      FilledButton(
+                        onPressed: () => Navigator.pop(context, true),
+                        child: const Text("Logout"),
+                      ),
+                    ],
                   ),
+                );
+
+                if (confirm != true || !context.mounted) return;
+
+                await context.read<AuthCubit>().logout();
+
+                if (!context.mounted) return;
+
+                Navigator.pushAndRemoveUntil(
+                  context,
+                  MaterialPageRoute(builder: (_) => const LoginPage()),
+                  (route) => false,
                 );
               },
               child: const Text("Logout"),

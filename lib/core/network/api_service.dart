@@ -46,21 +46,24 @@ class ApiService {
     throw Exception("Login failed");
   }
 
-  Future<void> setPassword(String token, SetPasswordRequest request) async {
+  Future<LoginResponse> setPassword(
+    String token,
+    SetPasswordRequest request,
+  ) async {
     final response = await http.post(
       Uri.parse("${ApiConstants.baseUrl}/auth/set-password"),
-
       headers: {
         "Content-Type": "application/json",
         "Authorization": "Bearer $token",
       },
-
       body: jsonEncode(request.toJson()),
     );
 
-    if (response.statusCode != 200) {
-      throw Exception("Failed to set password");
+    if (response.statusCode == 200) {
+      return LoginResponse.fromJson(jsonDecode(response.body));
     }
+
+    throw Exception("Failed to set password");
   }
 
   Future<CreatePlayerResponse> createPlayer(
@@ -129,11 +132,16 @@ class ApiService {
       headers: {"Authorization": "Bearer $token"},
     );
 
+    print("Attendance Status: ${response.statusCode}");
+    print("Attendance Body: ${response.body}");
+
     if (response.statusCode == 200) {
       return AttendanceResponse.fromJson(jsonDecode(response.body));
     }
 
-    throw Exception("Failed to load attendance");
+    throw Exception(
+      "Attendance failed (${response.statusCode}): ${response.body}",
+    );
   }
 
   Future<void> completeMatch(String token, int matchId) async {

@@ -1,12 +1,10 @@
+import 'package:fcjanja/features/auth/cubit/cubit/login_cubit.dart';
+import 'package:fcjanja/features/auth/cubit/cubit/login_state.dart';
+import 'package:fcjanja/features/dashboard/presentation/pages/dashboard_page.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../../../core/network/api_service.dart';
-import '../../data/models/login_request.dart';
-import '../../data/repository/auth_repository.dart';
 import 'set_password_screen.dart';
-import '../../../../core/storage/token_storage.dart';
-import '../../../../core/security/jwt_service.dart';
-import '../../../dashboard/presentation/pages/dashboard_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -18,97 +16,131 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final phoneController = TextEditingController();
   final secretController = TextEditingController();
-  final TokenStorage tokenStorage = TokenStorage();
-  final JwtService jwtService = JwtService();
 
-  final AuthRepository repository = AuthRepository(ApiService());
+  bool obscurePassword = true;
 
-  bool loading = false;
+  @override
+  void initState() {
+    super.initState();
 
-  Future<void> login() async {
-    setState(() {
-      loading = true;
-    });
+    phoneController.clear();
+    secretController.clear();
+  }
 
-    try {
-      final response = await repository.login(
-        LoginRequest(
-          phoneNumber: phoneController.text,
-          secret: secretController.text,
-        ),
-      );
-
-      if (!mounted) return;
-
-      if (response.mustSetPassword) {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => SetPasswordScreen(activationToken: response.token!),
-          ),
-        );
-
-        return;
-      }
-
-      await tokenStorage.saveToken(response.token!);
-
-      final bool isAdmin = jwtService.isAdmin(response.token!);
-
-      if (!mounted) return;
-
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => DashboardScreen(isAdmin: isAdmin)),
-      );
-    } catch (e) {
-      if (!mounted) return;
-
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(e.toString())));
-    }
-
-    if (!mounted) return;
-
-    setState(() {
-      loading = false;
-    });
+  @override
+  void dispose() {
+    phoneController.dispose();
+    secretController.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text("Login")),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            TextField(
-              controller: phoneController,
-              decoration: const InputDecoration(labelText: "Phone Number"),
+    return BlocConsumer<LoginCubit, LoginState>(
+      listener: (context, state) {
+        if (state is LoginFailure) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(state.message)));
+        }
+
+        if (state is LoginSuccess) {
+          final user = state.user;
+
+          if (user.mustSetPassword) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => SetPasswordScreen(activationToken: user.token),
+              ),
+            );
+
+            return;
+          }
+
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (_) => DashboardPage(isAdmin: user.isAdmin),
             ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: secretController,
-              obscureText: true,
-              decoration: const InputDecoration(
-                labelText: "Password / Activation Code",
+          );
+        }
+      },
+
+      builder: (context, state) {
+        return Scaffold(
+          appBar: AppBar(title: const Text("Login")),
+
+          body: AutofillGroup(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+
+              child: Column(
+                children: [
+                  TextField(
+                    controller: phoneController,
+                    autofillHints: const [AutofillHints.telephoneNumber],
+                    decoration: const InputDecoration(
+                      labelText: "Phone Number",
+                    ),
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  TextField(
+                    controller: secretController,
+                    obscureText: obscurePassword,
+                    enableSuggestions: false,
+                    autocorrect: false,
+                    autofillHints: const <String>[],
+                    decoration: InputDecoration(
+                      labelText: "Password / Activation Code",
+
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          obscurePassword
+                              ? Icons.visibility
+                              : Icons.visibility_off,
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            obscurePassword = !obscurePassword;
+                          });
+                        },
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  SizedBox(
+                    width: double.infinity,
+
+                    child: ElevatedButton(
+                      onPressed: state is LoginLoading
+                          ? null
+                          : () {
+                              context.read<LoginCubit>().login(
+                                phoneNumber: phoneController.text.trim(),
+                                secret: secretController.text,
+                              );
+                            },
+
+                      child: state is LoginLoading
+                          ? const SizedBox(
+                              width: 22,
+                              height: 22,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Text("Login"),
+                    ),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 24),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: loading ? null : login,
-                child: loading
-                    ? const CircularProgressIndicator()
-                    : const Text("Login"),
-              ),
-            ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 }

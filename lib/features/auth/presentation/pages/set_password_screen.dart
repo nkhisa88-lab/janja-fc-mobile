@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/network/api_service.dart';
+import '../../../../core/security/jwt_service.dart';
+import '../../../../core/storage/token_storage.dart';
+import '../../../dashboard/presentation/pages/dashboard_screen.dart';
 import '../../data/models/set_password_request.dart';
 import '../../data/repository/auth_repository.dart';
 
@@ -19,7 +22,14 @@ class _SetPasswordScreenState extends State<SetPasswordScreen> {
 
   final AuthRepository repository = AuthRepository(ApiService());
 
+  final TokenStorage tokenStorage = TokenStorage();
+
+  final JwtService jwtService = JwtService();
+
   bool loading = false;
+
+  bool obscurePassword = true;
+  bool obscureConfirmPassword = true;
 
   Future<void> savePassword() async {
     setState(() {
@@ -27,7 +37,7 @@ class _SetPasswordScreenState extends State<SetPasswordScreen> {
     });
 
     try {
-      await repository.setPassword(
+      final response = await repository.setPassword(
         widget.activationToken,
         SetPasswordRequest(
           password: passwordController.text,
@@ -35,13 +45,25 @@ class _SetPasswordScreenState extends State<SetPasswordScreen> {
         ),
       );
 
+      if (!response.success) {
+        throw Exception("Failed to save password");
+      }
+
+      await tokenStorage.saveToken(response.token!);
+
+      final bool isAdmin = jwtService.isAdmin(response.token!);
+
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Password saved successfully")),
       );
 
-      Navigator.pop(context);
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (_) => DashboardScreen(isAdmin: isAdmin)),
+        (route) => false,
+      );
     } catch (e) {
       if (!mounted) return;
 
@@ -58,6 +80,13 @@ class _SetPasswordScreenState extends State<SetPasswordScreen> {
   }
 
   @override
+  void dispose() {
+    passwordController.dispose();
+    confirmPasswordController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text("Set Password")),
@@ -67,22 +96,62 @@ class _SetPasswordScreenState extends State<SetPasswordScreen> {
           children: [
             TextField(
               controller: passwordController,
-              obscureText: true,
-              decoration: const InputDecoration(labelText: "New Password"),
+              obscureText: obscurePassword,
+              enableSuggestions: false,
+              autocorrect: false,
+              autofillHints: const [AutofillHints.newPassword],
+              decoration: InputDecoration(
+                labelText: "New Password",
+                suffixIcon: IconButton(
+                  icon: Icon(
+                    obscurePassword ? Icons.visibility : Icons.visibility_off,
+                  ),
+                  onPressed: () {
+                    setState(() {
+                      obscurePassword = !obscurePassword;
+                    });
+                  },
+                ),
+              ),
             ),
+
             const SizedBox(height: 20),
+
             TextField(
               controller: confirmPasswordController,
-              obscureText: true,
-              decoration: const InputDecoration(labelText: "Confirm Password"),
+              obscureText: obscureConfirmPassword,
+              enableSuggestions: false,
+              autocorrect: false,
+              autofillHints: const [AutofillHints.newPassword],
+              decoration: InputDecoration(
+                labelText: "Confirm Password",
+                suffixIcon: IconButton(
+                  icon: Icon(
+                    obscureConfirmPassword
+                        ? Icons.visibility
+                        : Icons.visibility_off,
+                  ),
+                  onPressed: () {
+                    setState(() {
+                      obscureConfirmPassword = !obscureConfirmPassword;
+                    });
+                  },
+                ),
+              ),
             ),
+
             const SizedBox(height: 30),
+
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
                 onPressed: loading ? null : savePassword,
                 child: loading
-                    ? const CircularProgressIndicator()
+                    ? const SizedBox(
+                        width: 22,
+                        height: 22,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
                     : const Text("Save Password"),
               ),
             ),

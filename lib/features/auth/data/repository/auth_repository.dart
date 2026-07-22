@@ -13,7 +13,7 @@ class AuthRepository {
     return apiService.login(request);
   }
 
-  Future<void> setPassword(String token, SetPasswordRequest request) {
+  Future<LoginResponse> setPassword(String token, SetPasswordRequest request) {
     return apiService.setPassword(token, request);
   }
 }

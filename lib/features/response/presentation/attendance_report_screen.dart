@@ -1,62 +1,22 @@
+import 'package:fcjanja/features/response/cubit/cubit/attendance_report_cubit.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../../core/network/api_service.dart';
-import '../../../core/storage/token_storage.dart';
-import '../data/models/attendance_report_response.dart';
-import '../data/repository/response_repository.dart';
 
-class AttendanceReportScreen extends StatefulWidget {
+
+class AttendanceReportScreen extends StatelessWidget {
   final int matchId;
 
-  const AttendanceReportScreen({super.key, required this.matchId});
+  const AttendanceReportScreen({
+    super.key,
+    required this.matchId,
+  });
 
-  @override
-  State<AttendanceReportScreen> createState() => _AttendanceReportScreenState();
-}
-
-class _AttendanceReportScreenState extends State<AttendanceReportScreen> {
-  final ResponseRepository repository = ResponseRepository(ApiService());
-
-  final TokenStorage tokenStorage = TokenStorage();
-
-  AttendanceReportResponse? report;
-
-  bool loading = true;
-
-  @override
-  void initState() {
-    super.initState();
-    loadReport();
-  }
-
-  Future<void> loadReport() async {
-    try {
-      final token = await tokenStorage.getToken();
-
-      if (token == null) {
-        throw Exception("User not logged in");
-      }
-
-      final data = await repository.getAttendanceReport(token, widget.matchId);
-
-      setState(() {
-        report = data;
-        loading = false;
-      });
-    } catch (e) {
-      if (!mounted) return;
-
-      setState(() {
-        loading = false;
-      });
-
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(e.toString())));
-    }
-  }
-
-  Widget playerSection(String title, List<String> players, IconData icon) {
+  Widget playerSection(
+    String title,
+    List<String> players,
+    IconData icon,
+  ) {
     return Card(
       margin: const EdgeInsets.only(bottom: 20),
       child: Padding(
@@ -102,18 +62,34 @@ class _AttendanceReportScreenState extends State<AttendanceReportScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Attendance Report")),
-      body: loading
-          ? const Center(child: CircularProgressIndicator())
-          : report == null
-          ? const Center(child: Text("Unable to load report"))
-          : SingleChildScrollView(
+      appBar: AppBar(
+        title: const Text("Attendance Report"),
+      ),
+
+      body: BlocBuilder<AttendanceReportCubit, AttendanceReportState>(
+        builder: (context, state) {
+          if (state is AttendanceReportLoading) {
+            return const Center(
+              child: CircularProgressIndicator(),
+            );
+          }
+
+          if (state is AttendanceReportFailure) {
+            return Center(
+              child: Text(state.message),
+            );
+          }
+
+          if (state is AttendanceReportLoaded) {
+            final report = state.report;
+
+            return SingleChildScrollView(
               padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    report!.opponent,
+                    report.opponent,
                     style: const TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
@@ -123,7 +99,7 @@ class _AttendanceReportScreenState extends State<AttendanceReportScreen> {
                   const SizedBox(height: 8),
 
                   Text(
-                    "Match Date: ${report!.matchDate}",
+                    "Match Date: ${report.matchDate}",
                     style: const TextStyle(fontSize: 16),
                   ),
 
@@ -131,20 +107,29 @@ class _AttendanceReportScreenState extends State<AttendanceReportScreen> {
 
                   playerSection(
                     "Available",
-                    report!.available,
+                    report.available,
                     Icons.check_circle,
                   ),
 
                   playerSection(
                     "Unavailable",
-                    report!.unavailable,
+                    report.unavailable,
                     Icons.cancel,
                   ),
 
-                  playerSection("Pending", report!.pending, Icons.schedule),
+                  playerSection(
+                    "Pending",
+                    report.pending,
+                    Icons.schedule,
+                  ),
                 ],
               ),
-            ),
+            );
+          }
+
+          return const SizedBox.shrink();
+        },
+      ),
     );
   }
 }
