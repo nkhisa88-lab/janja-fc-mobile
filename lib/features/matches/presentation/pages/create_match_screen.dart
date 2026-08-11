@@ -15,6 +15,9 @@ class _CreateMatchScreenState extends State<CreateMatchScreen> {
   final dateController = TextEditingController();
   final timeController = TextEditingController();
 
+  DateTime? selectedDate;
+  TimeOfDay? selectedTime;
+
   @override
   void dispose() {
     opponentController.dispose();
@@ -22,6 +25,82 @@ class _CreateMatchScreenState extends State<CreateMatchScreen> {
     dateController.dispose();
     timeController.dispose();
     super.dispose();
+  }
+
+  Future<void> selectDate() async {
+    final now = DateTime.now();
+
+    final pickedDate = await showDatePicker(
+      context: context,
+      initialDate: selectedDate ?? now,
+      firstDate: now,
+      lastDate: DateTime(now.year + 2),
+    );
+
+    if (pickedDate == null) return;
+
+    setState(() {
+      selectedDate = pickedDate;
+
+      dateController.text =
+          "${pickedDate.year.toString().padLeft(4, '0')}-"
+          "${pickedDate.month.toString().padLeft(2, '0')}-"
+          "${pickedDate.day.toString().padLeft(2, '0')}";
+    });
+  }
+
+  Future<void> selectTime() async {
+    final pickedTime = await showTimePicker(
+      context: context,
+      initialTime: selectedTime ?? TimeOfDay.now(),
+    );
+
+    if (pickedTime == null) return;
+
+    setState(() {
+      selectedTime = pickedTime;
+
+      timeController.text =
+          "${pickedTime.hour.toString().padLeft(2, '0')}:"
+          "${pickedTime.minute.toString().padLeft(2, '0')}:00";
+    });
+  }
+
+  void createMatch() {
+    if (opponentController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Please enter the opponent.")),
+      );
+      return;
+    }
+
+    if (venueController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Please enter the venue.")));
+      return;
+    }
+
+    if (dateController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Please select a match date.")),
+      );
+      return;
+    }
+
+    if (timeController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Please select a kickoff time.")),
+      );
+      return;
+    }
+
+    context.read<CreateMatchCubit>().createMatch(
+      opponent: opponentController.text.trim(),
+      venue: venueController.text.trim(),
+      matchDate: dateController.text.trim(),
+      kickoffTime: timeController.text.trim(),
+    );
   }
 
   @override
@@ -44,6 +123,9 @@ class _CreateMatchScreenState extends State<CreateMatchScreen> {
           dateController.clear();
           timeController.clear();
 
+          selectedDate = null;
+          selectedTime = null;
+
           FocusScope.of(context).unfocus();
 
           Navigator.pop(context);
@@ -52,14 +134,18 @@ class _CreateMatchScreenState extends State<CreateMatchScreen> {
       builder: (context, state) {
         return Scaffold(
           appBar: AppBar(title: const Text("Create Match")),
-          body: Padding(
+
+          body: SingleChildScrollView(
             padding: const EdgeInsets.all(20),
             child: Column(
               children: [
                 TextField(
                   controller: opponentController,
                   textInputAction: TextInputAction.next,
-                  decoration: const InputDecoration(labelText: "Opponent"),
+                  decoration: const InputDecoration(
+                    labelText: "Opponent",
+                    prefixIcon: Icon(Icons.sports_soccer),
+                  ),
                 ),
 
                 const SizedBox(height: 16),
@@ -67,16 +153,23 @@ class _CreateMatchScreenState extends State<CreateMatchScreen> {
                 TextField(
                   controller: venueController,
                   textInputAction: TextInputAction.next,
-                  decoration: const InputDecoration(labelText: "Venue"),
+                  decoration: const InputDecoration(
+                    labelText: "Venue",
+                    prefixIcon: Icon(Icons.location_on),
+                  ),
                 ),
 
                 const SizedBox(height: 16),
 
                 TextField(
                   controller: dateController,
-                  textInputAction: TextInputAction.next,
+                  readOnly: true,
+                  onTap: selectDate,
                   decoration: const InputDecoration(
-                    labelText: "Match Date (YYYY-MM-DD)",
+                    labelText: "Match Date",
+                    hintText: "Select match date",
+                    prefixIcon: Icon(Icons.calendar_today),
+                    suffixIcon: Icon(Icons.arrow_drop_down),
                   ),
                 ),
 
@@ -84,19 +177,13 @@ class _CreateMatchScreenState extends State<CreateMatchScreen> {
 
                 TextField(
                   controller: timeController,
-                  textInputAction: TextInputAction.done,
-                  onSubmitted: (_) {
-                    if (state is! CreateMatchLoading) {
-                      context.read<CreateMatchCubit>().createMatch(
-                        opponent: opponentController.text.trim(),
-                        venue: venueController.text.trim(),
-                        matchDate: dateController.text.trim(),
-                        kickoffTime: timeController.text.trim(),
-                      );
-                    }
-                  },
+                  readOnly: true,
+                  onTap: selectTime,
                   decoration: const InputDecoration(
-                    labelText: "Kickoff Time (HH:mm:ss)",
+                    labelText: "Kickoff Time",
+                    hintText: "Select kickoff time",
+                    prefixIcon: Icon(Icons.access_time),
+                    suffixIcon: Icon(Icons.arrow_drop_down),
                   ),
                 ),
 
@@ -105,16 +192,7 @@ class _CreateMatchScreenState extends State<CreateMatchScreen> {
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed: state is CreateMatchLoading
-                        ? null
-                        : () {
-                            context.read<CreateMatchCubit>().createMatch(
-                              opponent: opponentController.text.trim(),
-                              venue: venueController.text.trim(),
-                              matchDate: dateController.text.trim(),
-                              kickoffTime: timeController.text.trim(),
-                            );
-                          },
+                    onPressed: state is CreateMatchLoading ? null : createMatch,
                     child: state is CreateMatchLoading
                         ? const SizedBox(
                             width: 22,
