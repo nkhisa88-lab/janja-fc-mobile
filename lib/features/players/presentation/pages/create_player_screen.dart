@@ -39,7 +39,6 @@ class _CreatePlayerScreenState extends State<CreatePlayerScreen> {
             builder: (_) {
               return AlertDialog(
                 title: const Text("Player Created"),
-
                 content: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -47,9 +46,7 @@ class _CreatePlayerScreenState extends State<CreatePlayerScreen> {
                       "Activation Code",
                       style: TextStyle(fontWeight: FontWeight.bold),
                     ),
-
                     const SizedBox(height: 16),
-
                     SelectableText(
                       response.activationCode,
                       style: const TextStyle(
@@ -59,7 +56,6 @@ class _CreatePlayerScreenState extends State<CreatePlayerScreen> {
                     ),
                   ],
                 ),
-
                 actions: [
                   TextButton(
                     onPressed: () async {
@@ -75,7 +71,6 @@ class _CreatePlayerScreenState extends State<CreatePlayerScreen> {
                     },
                     child: const Text("Copy"),
                   ),
-
                   TextButton(
                     onPressed: () {
                       Navigator.pop(context);
@@ -90,67 +85,125 @@ class _CreatePlayerScreenState extends State<CreatePlayerScreen> {
           fullNameController.clear();
           phoneController.clear();
 
-          FocusScope.of(context).requestFocus(FocusNode());
+          FocusScope.of(context).unfocus();
         }
       },
-
       builder: (context, state) {
+        final loading = state is CreatePlayerLoading;
+
         return Scaffold(
           appBar: AppBar(title: const Text("Create Player")),
+          body: SafeArea(
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final screenWidth = constraints.maxWidth;
 
-          body: Padding(
-            padding: const EdgeInsets.all(20),
+                final horizontalPadding = screenWidth < 600 ? 20.0 : 40.0;
 
-            child: Column(
-              children: [
-                TextField(
-                  controller: fullNameController,
-                  textInputAction: TextInputAction.next,
-                  decoration: const InputDecoration(labelText: "Player Name"),
-                ),
+                final formWidth = screenWidth > 700 ? 600.0 : double.infinity;
 
-                const SizedBox(height: 20),
-
-                TextField(
-                  controller: phoneController,
-                  keyboardType: TextInputType.phone,
-                  textInputAction: TextInputAction.done,
-                  onSubmitted: (_) {
-                    if (state is! CreatePlayerLoading) {
-                      context.read<CreatePlayerCubit>().createPlayer(
-                        fullName: fullNameController.text.trim(),
-                        phoneNumber: phoneController.text.trim(),
-                      );
-                    }
-                  },
-                  decoration: const InputDecoration(labelText: "Phone Number"),
-                ),
-
-                const SizedBox(height: 30),
-
-                SizedBox(
-                  width: double.infinity,
-
-                  child: ElevatedButton(
-                    onPressed: state is CreatePlayerLoading
-                        ? null
-                        : () {
-                            context.read<CreatePlayerCubit>().createPlayer(
-                              fullName: fullNameController.text.trim(),
-                              phoneNumber: phoneController.text.trim(),
-                            );
-                          },
-
-                    child: state is CreatePlayerLoading
-                        ? const SizedBox(
-                            width: 22,
-                            height: 22,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Text("Create Player"),
+                return SingleChildScrollView(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: horizontalPadding,
+                    vertical: 24,
                   ),
-                ),
-              ],
+                  child: Center(
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(maxWidth: formWidth),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Icon(
+                            Icons.person_add,
+                            size: screenWidth < 600 ? 55 : 70,
+                          ),
+
+                          const SizedBox(height: 16),
+
+                          Text(
+                            "Create Player",
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: screenWidth < 600 ? 24 : 30,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+
+                          const SizedBox(height: 8),
+
+                          const Text(
+                            "Enter the player's details below.",
+                            textAlign: TextAlign.center,
+                          ),
+
+                          const SizedBox(height: 30),
+
+                          TextField(
+                            controller: fullNameController,
+                            textInputAction: TextInputAction.next,
+                            decoration: const InputDecoration(
+                              labelText: "Player Name",
+                              prefixIcon: Icon(Icons.person),
+                              border: OutlineInputBorder(),
+                            ),
+                          ),
+
+                          const SizedBox(height: 20),
+
+                          TextField(
+                            controller: phoneController,
+                            keyboardType: TextInputType.phone,
+                            textInputAction: TextInputAction.done,
+                            onSubmitted: (_) {
+                              if (!loading) {
+                                context.read<CreatePlayerCubit>().createPlayer(
+                                  fullName: fullNameController.text.trim(),
+                                  phoneNumber: phoneController.text.trim(),
+                                );
+                              }
+                            },
+                            decoration: const InputDecoration(
+                              labelText: "Phone Number",
+                              prefixIcon: Icon(Icons.phone),
+                              border: OutlineInputBorder(),
+                            ),
+                          ),
+
+                          const SizedBox(height: 30),
+
+                          SizedBox(
+                            width: double.infinity,
+                            height: 50,
+                            child: ElevatedButton(
+                              onPressed: loading
+                                  ? null
+                                  : () {
+                                      context
+                                          .read<CreatePlayerCubit>()
+                                          .createPlayer(
+                                            fullName: fullNameController.text
+                                                .trim(),
+                                            phoneNumber: phoneController.text
+                                                .trim(),
+                                          );
+                                    },
+                              child: loading
+                                  ? const SizedBox(
+                                      width: 22,
+                                      height: 22,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                      ),
+                                    )
+                                  : const Text("Create Player"),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              },
             ),
           ),
         );

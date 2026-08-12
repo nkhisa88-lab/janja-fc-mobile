@@ -1,6 +1,7 @@
 import 'package:fcjanja/features/matches/cubit/cubit/create_match_cubit.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:intl/intl.dart';
 
 class CreateMatchScreen extends StatefulWidget {
   const CreateMatchScreen({super.key});
@@ -30,67 +31,46 @@ class _CreateMatchScreenState extends State<CreateMatchScreen> {
   Future<void> selectDate() async {
     final now = DateTime.now();
 
-    final pickedDate = await showDatePicker(
+    final picked = await showDatePicker(
       context: context,
       initialDate: selectedDate ?? now,
       firstDate: now,
-      lastDate: DateTime(now.year + 2),
+      lastDate: DateTime(now.year + 5),
     );
 
-    if (pickedDate == null) return;
+    if (picked != null) {
+      setState(() {
+        selectedDate = picked;
 
-    setState(() {
-      selectedDate = pickedDate;
-
-      dateController.text =
-          "${pickedDate.year.toString().padLeft(4, '0')}-"
-          "${pickedDate.month.toString().padLeft(2, '0')}-"
-          "${pickedDate.day.toString().padLeft(2, '0')}";
-    });
+        dateController.text = DateFormat('yyyy-MM-dd').format(picked);
+      });
+    }
   }
 
   Future<void> selectTime() async {
-    final pickedTime = await showTimePicker(
+    final picked = await showTimePicker(
       context: context,
       initialTime: selectedTime ?? TimeOfDay.now(),
     );
 
-    if (pickedTime == null) return;
+    if (picked != null) {
+      setState(() {
+        selectedTime = picked;
 
-    setState(() {
-      selectedTime = pickedTime;
-
-      timeController.text =
-          "${pickedTime.hour.toString().padLeft(2, '0')}:"
-          "${pickedTime.minute.toString().padLeft(2, '0')}:00";
-    });
+        timeController.text =
+            '${picked.hour.toString().padLeft(2, '0')}:'
+            '${picked.minute.toString().padLeft(2, '0')}:00';
+      });
+    }
   }
 
   void createMatch() {
-    if (opponentController.text.trim().isEmpty) {
+    if (opponentController.text.trim().isEmpty ||
+        venueController.text.trim().isEmpty ||
+        dateController.text.trim().isEmpty ||
+        timeController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Please enter the opponent.")),
-      );
-      return;
-    }
-
-    if (venueController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text("Please enter the venue.")));
-      return;
-    }
-
-    if (dateController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Please select a match date.")),
-      );
-      return;
-    }
-
-    if (timeController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Please select a kickoff time.")),
+        const SnackBar(content: Text("Please fill in all fields.")),
       );
       return;
     }
@@ -114,9 +94,9 @@ class _CreateMatchScreenState extends State<CreateMatchScreen> {
         }
 
         if (state is CreateMatchSuccess) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(const SnackBar(content: Text("Match Created")));
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("Match created successfully.")),
+          );
 
           opponentController.clear();
           venueController.clear();
@@ -131,78 +111,133 @@ class _CreateMatchScreenState extends State<CreateMatchScreen> {
           Navigator.pop(context);
         }
       },
+
       builder: (context, state) {
         return Scaffold(
           appBar: AppBar(title: const Text("Create Match")),
 
-          body: SingleChildScrollView(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              children: [
-                TextField(
-                  controller: opponentController,
-                  textInputAction: TextInputAction.next,
-                  decoration: const InputDecoration(
-                    labelText: "Opponent",
-                    prefixIcon: Icon(Icons.sports_soccer),
+          body: SafeArea(
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final width = constraints.maxWidth;
+
+                final horizontalPadding = width < 600 ? 20.0 : 40.0;
+
+                return SingleChildScrollView(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: horizontalPadding,
+                    vertical: 24,
                   ),
-                ),
 
-                const SizedBox(height: 16),
+                  child: Center(
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 700),
 
-                TextField(
-                  controller: venueController,
-                  textInputAction: TextInputAction.next,
-                  decoration: const InputDecoration(
-                    labelText: "Venue",
-                    prefixIcon: Icon(Icons.location_on),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+
+                        children: [
+                          Text(
+                            "Create New Match",
+                            style: TextStyle(
+                              fontSize: width < 600 ? 24 : 30,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+
+                          const SizedBox(height: 8),
+
+                          const Text(
+                            "Enter the match details below.",
+                            style: TextStyle(fontSize: 16),
+                          ),
+
+                          const SizedBox(height: 30),
+
+                          TextField(
+                            controller: opponentController,
+                            textInputAction: TextInputAction.next,
+                            decoration: const InputDecoration(
+                              labelText: "Opponent",
+                              prefixIcon: Icon(Icons.sports_soccer),
+                              border: OutlineInputBorder(),
+                            ),
+                          ),
+
+                          const SizedBox(height: 18),
+
+                          TextField(
+                            controller: venueController,
+                            textInputAction: TextInputAction.next,
+                            decoration: const InputDecoration(
+                              labelText: "Venue",
+                              prefixIcon: Icon(Icons.location_on),
+                              border: OutlineInputBorder(),
+                            ),
+                          ),
+
+                          const SizedBox(height: 18),
+
+                          TextField(
+                            controller: dateController,
+                            readOnly: true,
+                            onTap: selectDate,
+                            decoration: const InputDecoration(
+                              labelText: "Match Date",
+                              hintText: "Select match date",
+                              prefixIcon: Icon(Icons.calendar_today),
+                              suffixIcon: Icon(Icons.arrow_drop_down),
+                              border: OutlineInputBorder(),
+                            ),
+                          ),
+
+                          const SizedBox(height: 18),
+
+                          TextField(
+                            controller: timeController,
+                            readOnly: true,
+                            onTap: selectTime,
+                            decoration: const InputDecoration(
+                              labelText: "Kickoff Time",
+                              hintText: "Select kickoff time",
+                              prefixIcon: Icon(Icons.access_time),
+                              suffixIcon: Icon(Icons.arrow_drop_down),
+                              border: OutlineInputBorder(),
+                            ),
+                          ),
+
+                          const SizedBox(height: 30),
+
+                          SizedBox(
+                            height: 52,
+                            child: ElevatedButton(
+                              onPressed: state is CreateMatchLoading
+                                  ? null
+                                  : createMatch,
+
+                              child: state is CreateMatchLoading
+                                  ? const SizedBox(
+                                      width: 22,
+                                      height: 22,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                      ),
+                                    )
+                                  : const Text(
+                                      "Create Match",
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
-                ),
-
-                const SizedBox(height: 16),
-
-                TextField(
-                  controller: dateController,
-                  readOnly: true,
-                  onTap: selectDate,
-                  decoration: const InputDecoration(
-                    labelText: "Match Date",
-                    hintText: "Select match date",
-                    prefixIcon: Icon(Icons.calendar_today),
-                    suffixIcon: Icon(Icons.arrow_drop_down),
-                  ),
-                ),
-
-                const SizedBox(height: 16),
-
-                TextField(
-                  controller: timeController,
-                  readOnly: true,
-                  onTap: selectTime,
-                  decoration: const InputDecoration(
-                    labelText: "Kickoff Time",
-                    hintText: "Select kickoff time",
-                    prefixIcon: Icon(Icons.access_time),
-                    suffixIcon: Icon(Icons.arrow_drop_down),
-                  ),
-                ),
-
-                const SizedBox(height: 30),
-
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: state is CreateMatchLoading ? null : createMatch,
-                    child: state is CreateMatchLoading
-                        ? const SizedBox(
-                            width: 22,
-                            height: 22,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Text("Create Match"),
-                  ),
-                ),
-              ],
+                );
+              },
             ),
           ),
         );

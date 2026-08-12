@@ -7,15 +7,37 @@ class AttendanceScreen extends StatelessWidget {
 
   const AttendanceScreen({super.key, required this.matchId});
 
-  Widget attendanceCard(String title, int value, IconData icon) {
+  Widget attendanceCard(
+    BuildContext context,
+    String title,
+    int value,
+    IconData icon,
+  ) {
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
-      child: ListTile(
-        leading: Icon(icon, size: 32),
-        title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
-        trailing: Text(
-          value.toString(),
-          style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            Icon(icon, size: 32),
+
+            const SizedBox(width: 16),
+
+            Expanded(
+              child: Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+
+            Text(
+              value.toString(),
+              style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+            ),
+          ],
         ),
       ),
     );
@@ -24,7 +46,7 @@ class AttendanceScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Attendance Summary")),
+      appBar: AppBar(),
 
       body: BlocBuilder<AttendanceCubit, AttendanceState>(
         builder: (context, state) {
@@ -33,31 +55,114 @@ class AttendanceScreen extends StatelessWidget {
           }
 
           if (state is AttendanceFailure) {
-            return Center(child: Text(state.message));
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.error_outline, size: 50),
+
+                    const SizedBox(height: 16),
+
+                    const Text(
+                      "Unable to load attendance",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+
+                    const SizedBox(height: 8),
+
+                    Text(state.message, textAlign: TextAlign.center),
+
+                    const SizedBox(height: 20),
+
+                    ElevatedButton(
+                      onPressed: () {
+                        context.read<AttendanceCubit>().loadAttendance(matchId);
+                      },
+                      child: const Text("Retry"),
+                    ),
+                  ],
+                ),
+              ),
+            );
           }
 
           if (state is AttendanceLoaded) {
             final attendance = state.attendance;
 
-            return Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                children: [
-                  attendanceCard(
-                    "Available",
-                    attendance.available,
-                    Icons.check_circle,
+            return LayoutBuilder(
+              builder: (context, constraints) {
+                final width = constraints.maxWidth;
+
+                final horizontalPadding = width < 600 ? 16.0 : 32.0;
+
+                final maxWidth = width > 800 ? 700.0 : width;
+
+                return SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+
+                  padding: EdgeInsets.symmetric(
+                    horizontal: horizontalPadding,
+                    vertical: 24,
                   ),
 
-                  attendanceCard(
-                    "Unavailable",
-                    attendance.unavailable,
-                    Icons.cancel,
-                  ),
+                  child: Center(
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(maxWidth: maxWidth),
 
-                  attendanceCard("Pending", attendance.pending, Icons.schedule),
-                ],
-              ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+
+                        children: [
+                          Text(
+                            "Attendance Summary",
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: width < 600 ? 24 : 30,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+
+                          const SizedBox(height: 8),
+
+                          const Text(
+                            "Current players responses for this match.",
+                            textAlign: TextAlign.center,
+                          ),
+
+                          const SizedBox(height: 30),
+
+                          attendanceCard(
+                            context,
+                            "Available",
+                            attendance.available,
+                            Icons.check_circle,
+                          ),
+
+                          attendanceCard(
+                            context,
+                            "Unavailable",
+                            attendance.unavailable,
+                            Icons.cancel,
+                          ),
+
+                          attendanceCard(
+                            context,
+                            "Pending",
+                            attendance.pending,
+                            Icons.schedule,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              },
             );
           }
 
