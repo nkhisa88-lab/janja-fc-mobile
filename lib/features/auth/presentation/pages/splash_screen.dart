@@ -1,12 +1,6 @@
 import 'dart:async';
 
-import 'package:fcjanja/features/auth/cubit/cubit/auth_cubit.dart';
-import 'package:fcjanja/features/dashboard/presentation/pages/dashboard_page.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-
-import '../../../../core/security/jwt_service.dart';
-import '../../../../core/storage/token_storage.dart';
 import 'login_page.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -17,141 +11,80 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen> {
-  late final AuthCubit authCubit;
+  late Image bgImage;
 
   @override
   void initState() {
     super.initState();
-
-    authCubit = AuthCubit(
-      tokenStorage: TokenStorage(),
-      jwtService: JwtService(),
-    );
-
-    _startAuthenticationCheck();
-  }
-
-  Future<void> _startAuthenticationCheck() async {
-    await Future.delayed(const Duration(milliseconds: 2400));
-
-    if (!mounted) return;
-
-    await authCubit.checkAuthentication();
+    // 1. Pre-cache the background image asset for instant rendering
+    bgImage = Image.asset('assets/images/janja.jpeg', fit: BoxFit.cover);
+    _startTimer();
   }
 
   @override
-  void dispose() {
-    authCubit.close();
-    super.dispose();
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    precacheImage(bgImage.image, context);
+  }
+
+  Future<void> _startTimer() async {
+    await Future.delayed(const Duration(seconds: 3));
+    if (!mounted) return;
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (_) => const LoginPage()),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider.value(
-      value: authCubit,
-      child: BlocListener<AuthCubit, AuthState>(
-        listener: (context, state) {
-          if (state is AuthenticatedAdmin) {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(
-                builder: (_) => const DashboardPage(isAdmin: true),
-              ),
-            );
-          }
-
-          if (state is AuthenticatedPlayer) {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(
-                builder: (_) => const DashboardPage(isAdmin: false),
-              ),
-            );
-          }
-
-          if (state is Unauthenticated) {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (_) => const LoginPage()),
-            );
-          }
-        },
-        child: const _SplashBody(),
-      ),
-    );
+    return _SplashBody(bgImage: bgImage);
   }
 }
 
 class _SplashBody extends StatelessWidget {
-  const _SplashBody();
+  final Image bgImage;
+
+  const _SplashBody({required this.bgImage});
 
   @override
   Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+
     return Scaffold(
-      body: SafeArea(
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            final width = constraints.maxWidth;
+      body: Stack(
+        children: [
+          // 2. BACKGROUND IMAGE LAYER: Fills the entire screen
+          Positioned.fill(child: bgImage),
 
-            final logoSize = width < 600 ? 90.0 : 130.0;
+          // 3. OVERLAY TINT LAYER: Darkens the image so white text is highly readable
+          Positioned.fill(
+            child: Container(
+              color: Colors.black.withAlpha(
+                180,
+              ), // Adjust darkness here (0 to 255)
+            ),
+          ),
 
-            final titleSize = width < 600 ? 28.0 : 38.0;
-
-            return Center(
-              child: SingleChildScrollView(
+          // 4. FOREGROUND CONTENT LAYER: Centers the "WELCOME" text
+          SafeArea(
+            child: Center(
+              child: Padding(
                 padding: const EdgeInsets.all(24),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Container(
-                      width: logoSize,
-                      height: logoSize,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(width: 3),
-                      ),
-                      child: Icon(Icons.sports_soccer, size: logoSize * 0.55),
-                    ),
-
-                    const SizedBox(height: 24),
-
-                    Text(
-                      "Janja FC",
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: titleSize,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-
-                    const SizedBox(height: 8),
-
-                    const Text(
-                      "Football Club Management System",
-                      textAlign: TextAlign.center,
-                      style: TextStyle(fontSize: 16),
-                    ),
-
-                    const SizedBox(height: 40),
-
-                    const SizedBox(
-                      width: 30,
-                      height: 30,
-                      child: CircularProgressIndicator(strokeWidth: 3),
-                    ),
-
-                    const SizedBox(height: 16),
-
-                    const Text(
-                      "Checking authentication...",
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
+                child: Text(
+                  "WELCOME",
+                  textAlign: TextAlign.center,
+                  style: textTheme.displayMedium?.copyWith(
+                    letterSpacing: 4,
+                    fontWeight: FontWeight.bold,
+                    color: Colors
+                        .white, // Made explicitly white to contrast with dark overlay
+                  ),
                 ),
               ),
-            );
-          },
-        ),
+            ),
+          ),
+        ],
       ),
     );
   }

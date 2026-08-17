@@ -92,7 +92,7 @@ class _CreatePlayerScreenState extends State<CreatePlayerScreen> {
         final loading = state is CreatePlayerLoading;
 
         return Scaffold(
-          appBar: AppBar(title: const Text("Create Player")),
+          appBar: AppBar(elevation: 1.0),
           body: SafeArea(
             child: LayoutBuilder(
               builder: (context, constraints) {

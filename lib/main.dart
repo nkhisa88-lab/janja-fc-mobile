@@ -1,3 +1,4 @@
+import 'package:fcjanja/core/theme/app_theme.dart';
 import 'package:fcjanja/features/auth/presentation/pages/splash_screen.dart';
 import 'package:flutter/material.dart';
 
@@ -10,9 +11,10 @@ class JanjaApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
+    return MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: SplashScreen(),
+      theme: AppTheme.lightTheme,
+      home: const SplashScreen(),
     );
   }
 }

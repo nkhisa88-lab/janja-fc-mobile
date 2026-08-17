@@ -71,7 +71,7 @@ class _LoginScreenState extends State<LoginScreen> {
         final horizontalPadding = Responsive.horizontalPadding(context);
 
         return Scaffold(
-          appBar: AppBar(title: const Text("Login")),
+          appBar: AppBar(),
 
           body: SafeArea(
             child: Center(

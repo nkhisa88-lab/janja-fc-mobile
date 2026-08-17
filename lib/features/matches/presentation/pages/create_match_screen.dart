@@ -114,7 +114,7 @@ class _CreateMatchScreenState extends State<CreateMatchScreen> {
 
       builder: (context, state) {
         return Scaffold(
-          appBar: AppBar(title: const Text("Create Match")),
+          appBar: AppBar(elevation: 1.0),
 
           body: SafeArea(
             child: LayoutBuilder(

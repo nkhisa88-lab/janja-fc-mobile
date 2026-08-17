@@ -51,8 +51,7 @@ class ManagerMatchesScreen extends StatelessWidget {
       ],
 
       child: Scaffold(
-        appBar: AppBar(title: const Text("Manage Matches")),
-
+        appBar: AppBar(elevation: 1.0),
         body: BlocBuilder<MatchCubit, MatchState>(
           builder: (context, state) {
             if (state is MatchLoading) {

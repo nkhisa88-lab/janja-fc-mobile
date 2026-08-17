@@ -163,10 +163,7 @@ class DashboardScreen extends StatelessWidget {
     final horizontalPadding = Responsive.horizontalPadding(context);
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(isAdmin ? "Manager Dashboard" : "Player Dashboard"),
-      ),
-
+      appBar: AppBar(elevation: 1.0),
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(
