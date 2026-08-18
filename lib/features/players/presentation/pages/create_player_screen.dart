@@ -113,23 +113,7 @@ class _CreatePlayerScreenState extends State<CreatePlayerScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          Icon(
-                            Icons.person_add,
-                            size: screenWidth < 600 ? 55 : 70,
-                          ),
-
-                          const SizedBox(height: 16),
-
-                          Text(
-                            "Create Player",
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: screenWidth < 600 ? 24 : 30,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-
-                          const SizedBox(height: 8),
+                          const SizedBox(height: 120),
 
                           const Text(
                             "Enter the player's details below.",

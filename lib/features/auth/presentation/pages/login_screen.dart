@@ -86,34 +86,6 @@ class _LoginScreenState extends State<LoginScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        Icon(
-                          Icons.sports_soccer_outlined,
-                          size: Responsive.isMobile(context) ? 70 : 90,
-                        ),
-
-                        const SizedBox(height: 20),
-
-                        Text(
-                          "Welcome Back",
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: Responsive.isMobile(context) ? 26 : 32,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-
-                        const SizedBox(height: 8),
-
-                        Text(
-                          "Login to your football club account",
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: Responsive.isMobile(context) ? 14 : 16,
-                          ),
-                        ),
-
-                        const SizedBox(height: 35),
-
                         TextField(
                           controller: phoneController,
                           keyboardType: TextInputType.phone,
