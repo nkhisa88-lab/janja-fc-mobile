@@ -54,6 +54,54 @@ class DashboardScreen extends StatelessWidget {
     );
   }
 
+  Widget buildProfileDrawer(BuildContext context) {
+    return Drawer(
+      child: SafeArea(
+        child: Column(
+          children: [
+            UserAccountsDrawerHeader(
+              decoration: const BoxDecoration(color: Colors.white10),
+              currentAccountPicture: const CircleAvatar(
+                child: Icon(Icons.person, size: 32),
+              ),
+              accountName: Text(
+                isAdmin ? " " : " ",
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                ),
+              ),
+              accountEmail: Text(
+                isAdmin ? "Manager Dashboard" : "Player Dashboard",
+              ),
+            ),
+
+            const Spacer(),
+
+            const Divider(),
+
+            ListTile(
+              leading: const Icon(Icons.logout),
+              title: const Text(
+                "Logout",
+                style: TextStyle(fontWeight: FontWeight.w600),
+              ),
+              onTap: () {
+                // Close the drawer first.
+                Navigator.pop(context);
+
+                // Then show the logout confirmation dialog.
+                logout(context);
+              },
+            ),
+
+            const SizedBox(height: 15),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget dashboardButton({
     required BuildContext context,
     required String text,
@@ -87,6 +135,7 @@ class DashboardScreen extends StatelessWidget {
           );
         },
       ),
+
       dashboardButton(
         context: context,
         text: "Create Match",
@@ -98,6 +147,7 @@ class DashboardScreen extends StatelessWidget {
           );
         },
       ),
+
       dashboardButton(
         context: context,
         text: "Manage Matches",
@@ -163,7 +213,23 @@ class DashboardScreen extends StatelessWidget {
     final horizontalPadding = Responsive.horizontalPadding(context);
 
     return Scaffold(
-      appBar: AppBar(elevation: 1.0),
+      appBar: AppBar(
+        elevation: 1.0,
+        leading: Builder(
+          builder: (context) {
+            return IconButton(
+              icon: const Icon(Icons.account_circle),
+              tooltip: "Profile",
+              onPressed: () {
+                Scaffold.of(context).openDrawer();
+              },
+            );
+          },
+        ),
+      ),
+
+      drawer: buildProfileDrawer(context),
+
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(
@@ -194,26 +260,6 @@ class DashboardScreen extends StatelessWidget {
                     playerFunctions(context),
 
                   const SizedBox(height: 50),
-
-                  const Divider(),
-
-                  const SizedBox(height: 20),
-
-                  SizedBox(
-                    width: double.infinity,
-                    height: 52,
-                    child: OutlinedButton.icon(
-                      onPressed: () => logout(context),
-                      icon: const Icon(Icons.logout),
-                      label: const Text(
-                        "Logout",
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ),
                 ],
               ),
             ),
