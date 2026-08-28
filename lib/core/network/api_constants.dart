@@ -1,3 +1,8 @@
+import 'package:flutter/foundation.dart';
+
 class ApiConstants {
-  static const String baseUrl = "http://localhost:8080";
+  // Automatically uses localhost for development and Render for production
+  static const String baseUrl = kReleaseMode
+      ? "https://onrender.com"
+      : "http://localhost:8080";
 }
