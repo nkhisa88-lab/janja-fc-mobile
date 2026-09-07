@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:fcjanja/features/auth/cubit/cubit/login_cubit.dart';
 import 'package:fcjanja/features/auth/cubit/cubit/login_state.dart';
 import 'package:flutter/material.dart';
@@ -20,6 +22,9 @@ class _LoginScreenState extends State<LoginScreen> {
 
   bool obscurePassword = true;
 
+  Timer? _slowLoginTimer;
+  String? _loadingMessage;
+
   @override
   void initState() {
     super.initState();
@@ -32,13 +37,53 @@ class _LoginScreenState extends State<LoginScreen> {
   void dispose() {
     phoneController.dispose();
     secretController.dispose();
+    _slowLoginTimer?.cancel();
     super.dispose();
+  }
+
+  void _startSlowLoginTimer() {
+    _slowLoginTimer?.cancel();
+    setState(() {
+      _loadingMessage = "Signing you in...";
+    });
+
+    _slowLoginTimer = Timer(const Duration(seconds: 3), () {
+      if (mounted) {
+        setState(() {
+          _loadingMessage =
+              "Still working — this can take up to 30s while the server wakes up";
+        });
+      }
+    });
+  }
+
+  void _stopSlowLoginTimer() {
+    _slowLoginTimer?.cancel();
+    _slowLoginTimer = null;
+    if (_loadingMessage != null) {
+      setState(() {
+        _loadingMessage = null;
+      });
+    }
+  }
+
+  void _triggerLogin(BuildContext context) {
+    context.read<LoginCubit>().login(
+      phoneNumber: phoneController.text.trim(),
+      secret: secretController.text,
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return BlocConsumer<LoginCubit, LoginState>(
       listener: (context, state) {
+        if (state is LoginLoading) {
+          _startSlowLoginTimer();
+        } else {
+          _stopSlowLoginTimer();
+        }
+
         if (state is LoginFailure) {
           ScaffoldMessenger.of(
             context,
@@ -109,10 +154,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           textInputAction: TextInputAction.done,
                           onSubmitted: (_) {
                             if (state is! LoginLoading) {
-                              context.read<LoginCubit>().login(
-                                phoneNumber: phoneController.text.trim(),
-                                secret: secretController.text,
-                              );
+                              _triggerLogin(context);
                             }
                           },
                           decoration: InputDecoration(
@@ -141,12 +183,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           child: ElevatedButton(
                             onPressed: state is LoginLoading
                                 ? null
-                                : () {
-                                    context.read<LoginCubit>().login(
-                                      phoneNumber: phoneController.text.trim(),
-                                      secret: secretController.text,
-                                    );
-                                  },
+                                : () => _triggerLogin(context),
                             child: state is LoginLoading
                                 ? const SizedBox(
                                     width: 22,
@@ -164,6 +201,15 @@ class _LoginScreenState extends State<LoginScreen> {
                                   ),
                           ),
                         ),
+
+                        if (_loadingMessage != null) ...[
+                          const SizedBox(height: 14),
+                          Text(
+                            _loadingMessage!,
+                            textAlign: TextAlign.center,
+                            style: TextStyle(color: Colors.grey[700]),
+                          ),
+                        ],
                       ],
                     ),
                   ),
