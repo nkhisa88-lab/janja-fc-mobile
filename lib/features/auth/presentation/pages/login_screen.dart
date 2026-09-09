@@ -50,8 +50,7 @@ class _LoginScreenState extends State<LoginScreen> {
     _slowLoginTimer = Timer(const Duration(seconds: 3), () {
       if (mounted) {
         setState(() {
-          _loadingMessage =
-              "Still working — this can take up to 30s while the server wakes up";
+          _loadingMessage = "Still working — this can take up to 2 minutes.";
         });
       }
     });
