@@ -1,5 +1,6 @@
 import 'package:fcjanja/core/storage/token_storage.dart';
 import 'package:fcjanja/features/auth/presentation/pages/login_page.dart';
+import 'package:fcjanja/features/dashboard/presentation/widgets/image_card_button.dart';
 import 'package:fcjanja/features/matches/presentation/pages/create_match_page.dart';
 import 'package:fcjanja/features/matches/presentation/pages/manager_matches_page.dart';
 import 'package:fcjanja/features/players/presentation/pages/create_player_page.dart';
@@ -195,16 +196,19 @@ class DashboardScreen extends StatelessWidget {
   }
 
   Widget playerFunctions(BuildContext context) {
-    return dashboardButton(
-      context: context,
-      text: "Upcoming Matches",
-      icon: Icons.calendar_month,
-      onPressed: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const PlayerMatchesPage()),
-        );
-      },
+    return ImageCardButton(
+      imagePath: 'assets/images/young.webp',
+      child: dashboardButton(
+        context: context,
+        text: "Upcoming Matches",
+        icon: Icons.calendar_month,
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const PlayerMatchesPage()),
+          );
+        },
+      ),
     );
   }
 
@@ -245,7 +249,7 @@ class DashboardScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    isAdmin ? "Manager Functions" : "Player Functions",
+                    isAdmin ? " " : " ",
                     style: TextStyle(
                       fontSize: Responsive.isMobile(context) ? 22 : 26,
                       fontWeight: FontWeight.bold,
